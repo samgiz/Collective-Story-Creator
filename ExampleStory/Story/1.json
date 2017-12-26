@@ -1,0 +1,13 @@
+{
+	"storyText": "You are walking through a forest. You see a wooden hut.",
+	"choices": [
+		{
+			"id": 2, 
+			"text": "Go towards the hut."
+		}, 
+		{
+			"id": 3,
+			"text": "Ignore the hut."
+		}
+	]
+}

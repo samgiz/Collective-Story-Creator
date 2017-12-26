@@ -1,0 +1,13 @@
+{
+	"storyText": "You walk towards the hut. You can see a big sleeping dog next to the door.",
+	"choices": [
+		{
+			"id": 4,
+			"text": "Is anybody there?"
+		},
+		{
+			"id": 5,
+			"text": "Quietly knock on the door"
+		}
+	]
+}
