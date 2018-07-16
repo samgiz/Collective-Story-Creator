@@ -1,0 +1,49 @@
+RootWidget:
+	MenuScreen:
+	PauseScreen:
+	GameScreen:
+	OptionsScreen:
+
+<MenuScreen>:
+	name: "menu"
+	BoxLayout:
+		orientation: 'vertical'
+		Button:
+			text: "Continue"
+			on_release: app.root.current = "game"
+		Button:
+			text: "Options"
+			on_release: app.root.current = "options"
+		Button:
+			text: "Quit"
+			on_release: app.stop()
+
+<PauseScreen>:
+	name: "pause"
+	BoxLayout:
+		orientation: 'vertical'
+		Button:
+			text: "Resume"
+			on_release: app.root.current = "game"
+		Button:
+			text: "Main Menu"
+			on_release: app.root.current = "menu"
+		Button:
+			text: "Options"
+			on_release: app.root.current = "options"
+
+<GameScreen>:
+	name: "game"
+
+<OptionsScreen>:
+	name: "options"
+	BoxLayout:
+		orientation: 'vertical'
+		Button:
+			text: "Back"
+			on_release: app.root.current = "menu"
+
+<ChoiceButton>:
+	
+<StoryText>:
+	font_size: 30
