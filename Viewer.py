@@ -2,7 +2,7 @@ from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import ObjectProperty, NumericProperty, ListProperty
+from kivy.properties import ObjectProperty, NumericProperty, ListProperty, StringProperty
 from kivy.uix.label import Label
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -58,6 +58,9 @@ class RootWidget(ScreenManager):
 	# current story id in list
 	cur_id = NumericProperty(-1) # by default no story is loaded
 
+	# used to implement the functionality of a back button
+	last_screen = ListProperty(["menu"])
+
 # text of a particular section of the story
 class StoryText(Label):
 	pass
@@ -78,6 +81,9 @@ class LoadScreen(Screen):
 	pass
 
 class PauseScreen(Screen):
+	pass
+
+class BackButton(Button):
 	pass
 
 class GameScreen(Screen):

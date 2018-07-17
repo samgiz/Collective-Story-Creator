@@ -1,4 +1,5 @@
 RootWidget:
+	current: self.last_screen[-1]
 	MenuScreen:
 	PauseScreen:
 	GameScreen:
@@ -12,6 +13,9 @@ RootWidget:
 			text: "Continue"
 			on_release: app.root.current = "game"
 		Button:
+			text: "New Game"
+			on_release: app.root.current = "game"
+		Button:
 			text: "Options"
 			on_release: app.root.current = "options"
 		Button:
@@ -22,9 +26,8 @@ RootWidget:
 	name: "pause"
 	BoxLayout:
 		orientation: 'vertical'
-		Button:
+		BackButton:
 			text: "Resume"
-			on_release: app.root.current = "game"
 		Button:
 			text: "Main Menu"
 			on_release: app.root.current = "menu"
@@ -39,11 +42,25 @@ RootWidget:
 	name: "options"
 	BoxLayout:
 		orientation: 'vertical'
-		Button:
-			text: "Back"
-			on_release: app.root.current = "menu"
+		BackButton:
+
+<LoadScreen>:
 
 <ChoiceButton>:
 	
 <StoryText>:
 	font_size: 30
+
+<Button>:
+	on_release:
+		## trying to be smart about saving the last screen only when necessary; hope this works
+		if app.root.current == "menu": last_screen = ["menu"]
+		if app.root.current != app.root.last_screen[-1]: app.root.last_screen.append(app.root.current)
+
+		## for dubugging purposes
+		print(app.root.last_screen)
+
+<BackButton>:
+	text: "Back"
+	on_release: 
+		app.root.last_screen.pop()
