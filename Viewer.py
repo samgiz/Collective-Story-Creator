@@ -6,9 +6,14 @@ from kivy.properties import ObjectProperty, NumericProperty, ListProperty, Strin
 from kivy.uix.label import Label
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, Screen
-import os
+from kivy.uix.filechooser import FileChooserListView
+from kivy.uix.popup import Popup
+from kivy.uix.recycleview.views import RecycleDataViewBehavior
 import json
 import types
+from time import gmtime, strftime
+from pathlib import Path
+import os.path
 
 #All stories should be stored in this single directory with first character not a dot (".").
 
@@ -17,8 +22,8 @@ storyDir = "./ExampleStory/"
 fullscreen = False
 
 
-# representation of a gamestate object
-# gamestate = {
+# representation of a state object
+# state = {
 #  choices = [{id: 1, text: ButtonText}, ...] (ids and texts of choices?)
 #  storyText = String
 #  
@@ -27,39 +32,69 @@ fullscreen = False
 
 # This class is supposed to store all the information about a story, including its current state and options
 class Story:
-	def __init__(self, folder):
+	def __init__(self, folder, *args):
+		if folder[-1]!="/":
+			folder+="/"
 		self.folder = folder
 		self.options = json.load(open(folder+"options.json"))
+		if len(args)>0:
+			self.updateState(args[0])
+		else:
+			self.updateState()
 
 	# Return path of a particular state with id i
 	def stateLocation(self, i):
 		return self.folder+"Story/"+str(i)+".json"
 
 	# change state to one stored at newId
-	def updateState(self, *args):
+	def updateState(self, btn = None):
 		# if no button is passed use the default starting position
-		newId = args[0].fileId if args else self.options["startId"]
+		self.stateId = btn.fileId if btn else self.options["startId"]
 
 		# for debugging purposses
-		print(newId)
+		print(self.stateId)
 
-		with open(self.stateLocation(newId)) as newState:
+		with open(self.stateLocation(self.stateId)) as newState:
 			self.state = json.load(newState)
 	
+# store folder, stateId, any stats (in the future) and save time
+# used when saving progress
+class StoryMemento:
+	def __init__(self, **kwargs):
+		self.timeStamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+		if "story" in kwargs:
+			story = kwargs["story"]
+		# this is a little stupid but it works
+		elif "folder" in kwargs:
+			if "stateId" in kwargs:
+				story = Story(kwargs["folder"], kwargs["stateId"])
+			else:
+				story = Story(kwargs["folder"])
+		else:
+			raise KeyError("StoryMemento cannot be initialized from given arguments")
+		self.folder = story.folder
+		self.stateId = story.stateId
+		self.title = story.options["title"] if "title" in story.options else "No Title"
+
 
 # Main widget. Controls screens
 class RootWidget(ScreenManager):
-	# list of active stories
-	active_stories = ListProperty([])
-
 	# User definable options
-	user_options = ObjectProperty({})
+	# Currently no options available as I'm focusing on the basic functionalities
+	userOptions = ObjectProperty({})
 
-	# current story id in list
-	cur_id = NumericProperty(-1) # by default no story is loaded
+	# current story id in list.
+	currentStory = ObjectProperty(None, allownone = True) # by default no story is loaded
 
-	# used to implement the functionality of a back button
-	last_screen = ListProperty(["menu"])
+	# used to implement the functionality of the back button
+	lastScreen = ListProperty(["menu"])
+
+	def __init__(self, **kwargs):
+		super(RootWidget, self).__init__(**kwargs)
+		# load the example story initially
+		self.currentStory = Story(storyDir)
+		
+
 
 # text of a particular section of the story
 class StoryText(Label):
@@ -69,16 +104,34 @@ class StoryText(Label):
 class ChoiceButton(Button):
 	pass
 
-
-# Only GameScreen (and possibly OptionsScreen) should need a non-kivy implementation
-# Also I might need to add a way to load new games, which would require an additional screen
 class MenuScreen(Screen):
 	pass
 
-
 # Implement load and save functionalities
-class LoadScreen(Screen):
-	pass
+class NewGameScreen(Screen):
+	# use thing below in a similar fashion to insert button at the top
+	# self.add_widget(your_widget, len(self.children))
+	storyList = ListProperty([])
+	def __init__(self, **kwargs):
+		self.loadedStoryFolders = []
+		super(NewGameScreen, self).__init__(**kwargs)
+	def addNewStory(self, selection):
+		if os.path.exists(selection+"/options.json"):
+			if selection not in self.loadedStoryFolders:
+				tmp = StoryMemento(folder = selection)
+				self.loadedStoryFolders.insert(0, selection)
+				print(tmp.folder, tmp.title)
+				self.storyList.insert(0, {"folder": tmp.folder, "text": tmp.title})
+			# otherwise bring selection to the top
+			else:
+				pass
+		else:
+			print("incorrect folder, no game present here")
+		
+class StoryListViewButton(RecycleDataViewBehavior, Button):
+	def __init__(self, **kwargs):
+		self.folder = kwargs.pop("folder", None)
+		super(StoryListViewButton, self).__init__(**kwargs)
 
 class PauseScreen(Screen):
 	pass
@@ -86,11 +139,19 @@ class PauseScreen(Screen):
 class BackButton(Button):
 	pass
 
+class LoadPopup(Popup):
+	def __init__(self, **kwargs):
+		self.caller = kwargs.pop("caller", None)
+		super(LoadPopup, self).__init__(**kwargs)
+
+class LoadStoryChooser(FileChooserListView):
+	pass
+
 class GameScreen(Screen):
-	currentStory = ObjectProperty()
+	currentStory = ObjectProperty(allownone = True)
 	def __init__(self, **kwargs):
 		super(GameScreen, self).__init__(**kwargs)
-		self.currentStory = Story(storyDir)
+
 		# add all the necessary widgets
 		tmp = BoxLayout(orientation="vertical")
 		self.storyText = StoryText()
@@ -99,14 +160,13 @@ class GameScreen(Screen):
 		self.buttons = BoxLayout(orientation="vertical")
 		tmp.add_widget(self.buttons)
 		self.add_widget(tmp)
-		# update screen according to gamestate
-		self.update()
 	
 	# Update screen according to gameState
 	# Post: all visual elements of gameState appear in screen
-	def update(self, *args):
+	def update(self, pressedButton = None, updateState = True):
 		# update story state if needed
-		self.currentStory.updateState(*args)
+		if updateState:
+			self.currentStory.updateState(pressedButton) 
 
 		# Clear old buttons
 		self.buttons.clear_widgets()
@@ -115,13 +175,20 @@ class GameScreen(Screen):
 
 		# Iterate over new state
 		for i in state["choices"]:
-			# Creation of new button
+			# Creation of new button. Bind the click to 
 			btn = ChoiceButton(text=i["text"])
 			btn.fileId = i["id"]
-			btn.bind(on_press=self.update)
+			btn.bind(on_release=self.update)
 			self.buttons.add_widget(btn)
+
+		# game ended, give option to return to menu
+		if not state["choices"]:
+			self.buttons.add_widget(StoryEndButton())
 		# Add text label
 		self.storyText.text = state["storyText"]
+
+class StoryEndButton(Button):
+	pass
 
 class OptionsScreen(Screen):
 	pass
@@ -129,11 +196,10 @@ class OptionsScreen(Screen):
 # application class
 class ViewerApp(App):
 	def build(self):
-		# pass the directory of story to main Widget
 		pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 	# set window to full screen and full resolution
 	if fullscreen:
 		import tkinter
