@@ -100,16 +100,8 @@ class RootWidget(ScreenManager):
 			self.currentStory = Story(tmp.folder, tmp.stateId) if tmp else None
 		
 
-
-# text of a particular section of the story
-class StoryText(Label):
-	pass
-
 # describes action to be taken when pressed
 class ChoiceButton(Button):
-	pass
-
-class MenuScreen(Screen):
 	pass
 
 # Implement load and save functionalities
@@ -142,8 +134,11 @@ class NewGameScreen(Screen):
 		else:
 			print("incorrect folder, no game present here")
 
-class LoadScreen(Screen):
+class LoadSaveScreen(Screen):
 	savedStories = ObjectProperty(None)
+	labelText = StringProperty("")
+
+class LoadScreen(LoadSaveScreen):
 	def __init__(self, **kwargs):
 		super(LoadScreen, self).__init__(**kwargs)
 		def tmp(*args):
@@ -157,8 +152,7 @@ class LoadScreen(Screen):
 					self.savedStories.add_widget(SavedStoryButton(index = i, memento = None))
 		Clock.schedule_once(tmp)
 
-class SaveScreen(Screen):
-	savedStories = ObjectProperty(None)
+class SaveScreen(LoadSaveScreen):
 	def __init__(self, **kwargs):
 		super(SaveScreen, self).__init__(**kwargs)
 		def tmp(*args):
@@ -171,21 +165,21 @@ class SaveScreen(Screen):
 				self.savedStories.add_widget(btn)
 		Clock.schedule_once(tmp)
 
-class StoryListViewButton(RecycleDataViewBehavior, Button):
+class ChangeScreenButton(Button):
+	pass
+
+class EndGameButton(ChangeScreenButton):
+	pass
+
+class StoryListViewButton(RecycleDataViewBehavior, ChangeScreenButton):
 	def __init__(self, **kwargs):
 		self.folder = kwargs.pop("folder", None)
 		super(StoryListViewButton, self).__init__(**kwargs)
-
-class BackButton(Button):
-	pass
 
 class LoadPopup(Popup):
 	def __init__(self, **kwargs):
 		self.caller = kwargs.pop("caller", None)
 		super(LoadPopup, self).__init__(**kwargs)
-
-class LoadStoryChooser(FileChooserListView):
-	pass
 
 class GameScreen(Screen):
 	currentStory = ObjectProperty(allownone = True)
@@ -236,12 +230,6 @@ class SavedStoryButton(Button):
 				app.current = "game"
 		else: # save current game
 			self.memento = StoryMemento(story = app.currentStory)
-
-class EndGameButton(Button):
-	pass
-
-class OptionsScreen(Screen):
-	pass
 
 # application class
 class ViewerApp(App):

@@ -12,21 +12,21 @@ RootWidget:
 	LoadScreen
 	SaveScreen
 
-<MenuScreen>:
+<MenuScreen@Screen>:
 	name: "menu"
 	BoxLayout:
 		orientation: "vertical"
-		Button:
+		ChangeScreenButton:
 			text: "Continue"
 			disabled: root.manager.currentStory == None
 			on_release: app.root.current = "game"
-		Button:
+		ChangeScreenButton:
 			text: "New Game"
 			on_release: app.root.current = "new"
-		Button:
+		ChangeScreenButton:
 			text: "Load"
 			on_release: app.root.current = "load"
-		Button:
+		ChangeScreenButton:
 			text: "Save"
 			disabled: root.manager.currentStory == None
 			on_release: app.root.current = "save"
@@ -45,9 +45,9 @@ RootWidget:
 
 	on_enter: self.update(updateState = False)
 	BoxLayout:
-		Button:
+		ChangeScreenButton:
 			text: "Back to menu"
-			on_release: 
+			on_release:
 				app.root.current = "menu"
 		StoryText:
 			id: txt
@@ -55,35 +55,30 @@ RootWidget:
 			id: btns
 
 
-<OptionsScreen>:
+<OptionsScreen@Screen>:
 	name: "options"
 	BoxLayout:
 		orientation: "vertical"
 		BackButton
 
-<LoadScreen>:
-	name: "load"
+<LoadSaveScreen>:
 	savedStories: slots
 	BoxLayout:
 		BackButton
 		Label:
-			text: "Choose a slot to load from"
+			text: root.labelText
 		GridLayout:
 			cols: 2
 			rows: 3
 			id: slots
 
+<LoadScreen>:
+	name: "load"
+	labelText: "Choose a slot to load from"
+
 <SaveScreen>:
 	name: "save"
-	savedStories: slots
-	BoxLayout:
-		BackButton
-		Label:
-			text: "Choose a slot to save to"
-		GridLayout:
-			cols: 2
-			rows: 3
-			id: slots
+	labelText: "Choose a slot to save to"
 
 <NewGameScreen>:
 	name: "new"
@@ -99,12 +94,11 @@ RootWidget:
 			text: "Load new game"
 			on_release: Factory.LoadPopup(caller=root).open()
 
-<LoadStoryChooser>:
+<LoadStoryChooser@FileChooserListView>:
 	path: "./"
 	dirselect: True
-	# TODO: disallow selection of files
 
-<SavedStoryButton>:
+<SavedStoryButton@ChangeScreenButton>:
 	on_release: self.loadOrSave()
 	text: self.memento.title + "\n" + self.memento.timeStamp if self.memento else "(Empty Slot)"
 
@@ -124,13 +118,13 @@ RootWidget:
 					root.dismiss()
 					if loader.selection != []: root.caller.addNewStory(loader.selection[0])
 					
-
-<ChoiceButton>:
 	
-<StoryText>:
+<StoryText@Label>:
 	font_size: 30
 
-<Button>:
+<ChoiceButton>:
+
+<ChangeScreenButton@Button>:
 	on_release:
 		## trying to be smart about saving the last screen only when necessary; seems to work
 		if app.root.current == "menu": app.root.lastScreen = ["menu"]
@@ -139,13 +133,13 @@ RootWidget:
 		## for dubugging purposes
 		print(app.root.lastScreen)
 
-<EndGameButton>:
+<EndGameButton@ChangeScreenButton>:
 	text: "Back to Main Menu"
 	on_release: 
 		app.root.current = "menu"
 		app.root.currentStory = None
 
-<BackButton>: 
+<BackButton@ChangeScreenButton>:
 	text: "Back"
 	on_release: app.root.lastScreen.pop()
 
