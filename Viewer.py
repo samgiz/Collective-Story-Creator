@@ -9,16 +9,17 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.popup import Popup
 from kivy.uix.recycleview.views import RecycleDataViewBehavior
+from kivy.clock import Clock
 import json
 import types
 from time import gmtime, strftime
-from pathlib import Path
 import os.path
+import pickle
 
 #All stories should be stored in this single directory with first character not a dot (".").
 
 #This is the directory that contains the story. You may (and should) change it.
-storyDir = "./ExampleStory/"
+storyDir = "./ExampleStory"
 fullscreen = False
 
 
@@ -47,9 +48,9 @@ class Story:
 		return self.folder+"Story/"+str(i)+".json"
 
 	# change state to one stored at newId
-	def updateState(self, btn = None):
+	def updateState(self, stateId = None):
 		# if no button is passed use the default starting position
-		self.stateId = btn.fileId if btn else self.options["startId"]
+		self.stateId = stateId if stateId else self.options["startId"]
 
 		# for debugging purposses
 		print(self.stateId)
@@ -74,14 +75,14 @@ class StoryMemento:
 			raise KeyError("StoryMemento cannot be initialized from given arguments")
 		self.folder = story.folder
 		self.stateId = story.stateId
-		self.title = story.options["title"] if "title" in story.options else "No Title"
+		self.title = story.options["title"] if "title" in story.options else self.folder.split('/')[-2]
 
 
 # Main widget. Controls screens
 class RootWidget(ScreenManager):
 	# User definable options
 	# Currently no options available as I'm focusing on the basic functionalities
-	userOptions = ObjectProperty({})
+	# userOptions = ObjectProperty({})
 
 	# current story id in list.
 	currentStory = ObjectProperty(None, allownone = True) # by default no story is loaded
@@ -93,6 +94,10 @@ class RootWidget(ScreenManager):
 		super(RootWidget, self).__init__(**kwargs)
 		# load the example story initially
 		self.currentStory = Story(storyDir)
+		if os.path.isfile("./.storystateinfo"):
+			with open("./.storystateinfo", "rb") as f:
+				tmp = pickle.load(f)["currentStoryMemento"]
+			self.currentStory = Story(tmp.folder, tmp.stateId) if tmp else None
 		
 
 
@@ -109,12 +114,21 @@ class MenuScreen(Screen):
 
 # Implement load and save functionalities
 class NewGameScreen(Screen):
-	# use thing below in a similar fashion to insert button at the top
-	# self.add_widget(your_widget, len(self.children))
+	# contains the loaded stories that can be selected in the RecycleView
 	storyList = ListProperty([])
 	def __init__(self, **kwargs):
-		self.loadedStoryFolders = []
 		super(NewGameScreen, self).__init__(**kwargs)
+
+		self.loadedStoryFolders = []
+
+		if os.path.isfile("./.storystateinfo"):
+			with open("./.storystateinfo", "rb") as f:
+				tmp = pickle.load(f)
+			for i in tmp["loadedStoryFolders"]:
+				self.addNewStory(i)
+
+		
+
 	def addNewStory(self, selection):
 		if os.path.exists(selection+"/options.json"):
 			if selection not in self.loadedStoryFolders:
@@ -127,14 +141,40 @@ class NewGameScreen(Screen):
 				pass
 		else:
 			print("incorrect folder, no game present here")
-		
+
+class LoadScreen(Screen):
+	savedStories = ObjectProperty(None)
+	def __init__(self, **kwargs):
+		super(LoadScreen, self).__init__(**kwargs)
+		def tmp(*args):
+			if os.path.isfile("./.storystateinfo"):
+				with open("./.storystateinfo", "rb") as f:
+					tmp = pickle.load(f)["savedStoriesMementos"]
+				for i in range(self.savedStories.cols*self.savedStories.rows):
+					self.savedStories.add_widget(SavedStoryButton(index = i, memento = tmp[i]))
+			else:
+				for i in range(self.savedStories.cols*self.savedStories.rows):
+					self.savedStories.add_widget(SavedStoryButton(index = i, memento = None))
+		Clock.schedule_once(tmp)
+
+class SaveScreen(Screen):
+	savedStories = ObjectProperty(None)
+	def __init__(self, **kwargs):
+		super(SaveScreen, self).__init__(**kwargs)
+		def tmp(*args):
+			children = App.get_running_app().root.get_screen("load").savedStories.children
+			print(len(children))
+			for i in range(self.savedStories.cols*self.savedStories.rows):
+				loadButton = children[self.savedStories.cols*self.savedStories.rows-1-i]
+				btn = SavedStoryButton(index = i, memento = loadButton.memento)
+				btn.bind(memento = loadButton.setter("memento"))
+				self.savedStories.add_widget(btn)
+		Clock.schedule_once(tmp)
+
 class StoryListViewButton(RecycleDataViewBehavior, Button):
 	def __init__(self, **kwargs):
 		self.folder = kwargs.pop("folder", None)
 		super(StoryListViewButton, self).__init__(**kwargs)
-
-class PauseScreen(Screen):
-	pass
 
 class BackButton(Button):
 	pass
@@ -149,24 +189,17 @@ class LoadStoryChooser(FileChooserListView):
 
 class GameScreen(Screen):
 	currentStory = ObjectProperty(allownone = True)
+	storyText = ObjectProperty(None)
+	buttons = ObjectProperty(None)
 	def __init__(self, **kwargs):
 		super(GameScreen, self).__init__(**kwargs)
-
-		# add all the necessary widgets
-		tmp = BoxLayout(orientation="vertical")
-		self.storyText = StoryText()
-		tmp.add_widget(self.storyText)
-
-		self.buttons = BoxLayout(orientation="vertical")
-		tmp.add_widget(self.buttons)
-		self.add_widget(tmp)
 	
 	# Update screen according to gameState
 	# Post: all visual elements of gameState appear in screen
 	def update(self, pressedButton = None, updateState = True):
 		# update story state if needed
 		if updateState:
-			self.currentStory.updateState(pressedButton) 
+			self.currentStory.updateState(pressedButton.fileId) 
 
 		# Clear old buttons
 		self.buttons.clear_widgets()
@@ -183,11 +216,28 @@ class GameScreen(Screen):
 
 		# game ended, give option to return to menu
 		if not state["choices"]:
-			self.buttons.add_widget(StoryEndButton())
+			self.buttons.add_widget(EndGameButton())
 		# Add text label
 		self.storyText.text = state["storyText"]
 
-class StoryEndButton(Button):
+class SavedStoryButton(Button):
+	memento = ObjectProperty(None)
+	def __init__(self, **kwargs):
+		self.index = kwargs.pop("index", None)
+		self.memento = kwargs.pop("memento", None)
+		super(SavedStoryButton, self).__init__(**kwargs)
+
+	def loadOrSave(self):
+		app = App.get_running_app().root
+		print(app.current)
+		if app.current == "load":
+			if self.memento:
+				app.currentStory = Story(self.memento.folder, self.memento.stateId)
+				app.current = "game"
+		else: # save current game
+			self.memento = StoryMemento(story = app.currentStory)
+
+class EndGameButton(Button):
 	pass
 
 class OptionsScreen(Screen):
@@ -197,6 +247,16 @@ class OptionsScreen(Screen):
 class ViewerApp(App):
 	def build(self):
 		pass
+	def on_stop(self):
+		# store loaded games both in load screen and in newgame screen, as well as current story info
+		tmp = {"currentStoryMemento": StoryMemento(story = self.root.currentStory) if self.root.currentStory else None, 
+			"savedStoriesMementos": list(map(lambda x: x.memento, self.root.get_screen("load").savedStories.children)),
+			"loadedStoryFolders": self.root.get_screen("new").loadedStoryFolders}
+		with open("./.storystateinfo", "wb+") as f:
+			pickle.dump(tmp, f, pickle.HIGHEST_PROTOCOL)
+		
+	def on_pause(self):
+		self.on_stop()
 
 
 if __name__ == "__main__":
@@ -229,6 +289,4 @@ if __name__ == "__main__":
 # Things to store in main object (or maybe just some sccreen?):
 
 # User options
-# List of loadable games
-# (List of) GameState(s). Should probably contain the path to game.
 # Certain options for each game (specific for each) (non-urgent)

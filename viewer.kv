@@ -1,50 +1,59 @@
 #:import Factory kivy.factory.Factory
 #:import Path pathlib.Path
 #:import Story Viewer.Story
+#:import StoryMemento Viewer.StoryMemento
 
 RootWidget:
 	current: self.lastScreen[-1]
 	MenuScreen
-	PauseScreen
 	GameScreen
 	OptionsScreen
 	NewGameScreen
+	LoadScreen
+	SaveScreen
 
 <MenuScreen>:
 	name: "menu"
 	BoxLayout:
-		orientation: 'vertical'
+		orientation: "vertical"
 		Button:
 			text: "Continue"
 			disabled: root.manager.currentStory == None
 			on_release: app.root.current = "game"
 		Button:
 			text: "New Game"
+			on_release: app.root.current = "new"
+		Button:
+			text: "Load"
 			on_release: app.root.current = "load"
 		Button:
-			text: "Options"
-			on_release: app.root.current = "options"
+			text: "Save"
+			disabled: root.manager.currentStory == None
+			on_release: app.root.current = "save"
+		# Button:
+		# 	text: "Options"
+		# 	on_release: app.root.current = "options"
 		Button:
 			text: "Quit"
 			on_release: app.stop()
 
-<PauseScreen>:
-	name: "pause"
-	BoxLayout:
-		orientation: 'vertical'
-		BackButton:
-			text: "Resume"
-		Button:
-			text: "Main Menu"
-			on_release: app.root.current = "menu"
-		Button:
-			text: "Options"
-			on_release: app.root.current = "options"
-
 <GameScreen>:
 	name: "game"
 	currentStory: self.manager.currentStory
+	storyText: txt 
+	buttons: btns
+
 	on_enter: self.update(updateState = False)
+	BoxLayout:
+		Button:
+			text: "Back to menu"
+			on_release: 
+				app.root.current = "menu"
+		StoryText:
+			id: txt
+		BoxLayout:
+			id: btns
+
 
 <OptionsScreen>:
 	name: "options"
@@ -52,8 +61,32 @@ RootWidget:
 		orientation: "vertical"
 		BackButton
 
-<NewGameScreen>:
+<LoadScreen>:
 	name: "load"
+	savedStories: slots
+	BoxLayout:
+		BackButton
+		Label:
+			text: "Choose a slot to load from"
+		GridLayout:
+			cols: 2
+			rows: 3
+			id: slots
+
+<SaveScreen>:
+	name: "save"
+	savedStories: slots
+	BoxLayout:
+		BackButton
+		Label:
+			text: "Choose a slot to save to"
+		GridLayout:
+			cols: 2
+			rows: 3
+			id: slots
+
+<NewGameScreen>:
+	name: "new"
 	BoxLayout:
 		BackButton:
 		RecycleView:
@@ -67,12 +100,17 @@ RootWidget:
 			on_release: Factory.LoadPopup(caller=root).open()
 
 <LoadStoryChooser>:
+	path: "./"
+	dirselect: True
+	# TODO: disallow selection of files
+
+<SavedStoryButton>:
+	on_release: self.loadOrSave()
+	text: self.memento.title + "\n" + self.memento.timeStamp if self.memento else "(Empty Slot)"
 
 <LoadPopup>:
 	BoxLayout:
-		LoadStoryChooser:
-			path: str(Path.home())
-			dirselect: True
+		LoadStoryChooser:		
 			id: loader
 		BoxLayout:
 			orientation: "horizontal"
@@ -84,7 +122,7 @@ RootWidget:
 				## this needs additional functionality
 				on_release:
 					root.dismiss()
-					if loader.selection != []:root.caller.addNewStory(loader.selection[0])
+					if loader.selection != []: root.caller.addNewStory(loader.selection[0])
 					
 
 <ChoiceButton>:
@@ -101,7 +139,7 @@ RootWidget:
 		## for dubugging purposes
 		print(app.root.lastScreen)
 
-<StoryEndButton>:
+<EndGameButton>:
 	text: "Back to Main Menu"
 	on_release: 
 		app.root.current = "menu"
