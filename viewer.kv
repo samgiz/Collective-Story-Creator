@@ -1,7 +1,9 @@
-#:import Factory kivy.factory.Factory
-#:import Path pathlib.Path
-#:import Story Viewer.Story
-#:import StoryMemento Viewer.StoryMemento
+#:include buttons.kv
+#:include menuscreen.kv
+#:include gamescreen.kv
+#:include newgamescreen.kv
+#:include loadsavescreens.kv
+#:include optionsscreen.kv
 
 RootWidget:
 	current: self.lastScreen[-1]
@@ -11,142 +13,6 @@ RootWidget:
 	NewGameScreen
 	LoadScreen
 	SaveScreen
-
-<MenuScreen@Screen>:
-	name: "menu"
-	BoxLayout:
-		orientation: "vertical"
-		ChangeScreenButton:
-			text: "Continue"
-			disabled: root.manager.currentStory == None
-			on_release: app.root.current = "game"
-		ChangeScreenButton:
-			text: "New Game"
-			on_release: app.root.current = "new"
-		ChangeScreenButton:
-			text: "Load"
-			on_release: app.root.current = "load"
-		ChangeScreenButton:
-			text: "Save"
-			disabled: root.manager.currentStory == None
-			on_release: app.root.current = "save"
-		# Button:
-		# 	text: "Options"
-		# 	on_release: app.root.current = "options"
-		Button:
-			text: "Quit"
-			on_release: app.stop()
-
-<GameScreen>:
-	name: "game"
-	currentStory: self.manager.currentStory
-	storyText: txt 
-	buttons: btns
-
-	on_enter: self.update(updateState = False)
-	BoxLayout:
-		ChangeScreenButton:
-			text: "Back to menu"
-			on_release:
-				app.root.current = "menu"
-		StoryText:
-			id: txt
-		BoxLayout:
-			id: btns
-
-
-<OptionsScreen@Screen>:
-	name: "options"
-	BoxLayout:
-		orientation: "vertical"
-		BackButton
-
-<LoadSaveScreen>:
-	savedStories: slots
-	BoxLayout:
-		BackButton
-		Label:
-			text: root.labelText
-		GridLayout:
-			cols: 2
-			rows: 3
-			id: slots
-
-<LoadScreen>:
-	name: "load"
-	labelText: "Choose a slot to load from"
-
-<SaveScreen>:
-	name: "save"
-	labelText: "Choose a slot to save to"
-
-<NewGameScreen>:
-	name: "new"
-	BoxLayout:
-		BackButton:
-		RecycleView:
-			id: listview
-			data: root.storyList
-			viewclass: "StoryListViewButton"
-			RecycleBoxLayout
-				
-		Button:
-			text: "Load new game"
-			on_release: Factory.LoadPopup(caller=root).open()
-
-<LoadStoryChooser@FileChooserListView>:
-	path: "./"
-	dirselect: True
-
-<SavedStoryButton@ChangeScreenButton>:
-	on_release: self.loadOrSave()
-	text: self.memento.title + "\n" + self.memento.timeStamp if self.memento else "(Empty Slot)"
-
-<LoadPopup>:
-	BoxLayout:
-		LoadStoryChooser:		
-			id: loader
-		BoxLayout:
-			orientation: "horizontal"
-			Button:
-				text: "Cancel"
-				on_release: root.dismiss()
-			Button:
-				text: "Load Game"
-				## this needs additional functionality
-				on_release:
-					root.dismiss()
-					if loader.selection != []: root.caller.addNewStory(loader.selection[0])
-					
-	
-<StoryText@Label>:
-	font_size: 30
-
-<ChoiceButton>:
-
-<ChangeScreenButton@Button>:
-	on_release:
-		## trying to be smart about saving the last screen only when necessary; seems to work
-		if app.root.current == "menu": app.root.lastScreen = ["menu"]
-		if app.root.current != app.root.lastScreen[-1]: app.root.lastScreen.append(app.root.current)
-
-		## for dubugging purposes
-		print(app.root.lastScreen)
-
-<EndGameButton@ChangeScreenButton>:
-	text: "Back to Main Menu"
-	on_release: 
-		app.root.current = "menu"
-		app.root.currentStory = None
-
-<BackButton@ChangeScreenButton>:
-	text: "Back"
-	on_release: app.root.lastScreen.pop()
-
-<StoryListViewButton>:
-	on_release:
-		app.root.currentStory = Story(self.folder)
-		app.root.current = "game"
 
 <BoxLayout>:
 	orientation: "vertical"

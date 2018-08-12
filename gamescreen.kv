@@ -1,0 +1,27 @@
+<GameScreen>:
+	name: "game"
+	currentStory: self.manager.currentStory
+	storyText: txt 
+	buttons: btns
+
+	on_enter: self.update(updateState = False)
+	BoxLayout:
+		ChangeScreenButton:
+			text: "Back to menu"
+			on_release:
+				app.root.current = "menu"
+		StoryText:
+			id: txt
+		BoxLayout:
+			id: btns
+
+<StoryText@Label>:
+	font_size: 30
+
+<ChoiceButton>:
+
+<EndGameButton@ChangeScreenButton>:
+	text: "Back to Main Menu"
+	on_release: 
+		app.root.current = "menu"
+		app.root.currentStory = None

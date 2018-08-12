@@ -1,0 +1,40 @@
+#:import Factory kivy.factory.Factory
+
+<NewGameScreen>:
+	name: "new"
+	BoxLayout:
+		BackButton:
+		RecycleView:
+			id: listview
+			data: root.storyList
+			viewclass: "StoryListViewButton"
+			RecycleBoxLayout
+				
+		Button:
+			text: "Load new game"
+			on_release: Factory.LoadPopup(caller=root).open()
+<LoadPopup>:
+	BoxLayout:
+		LoadStoryChooser:		
+			id: loader
+		BoxLayout:
+			orientation: "horizontal"
+			Button:
+				text: "Cancel"
+				on_release: root.dismiss()
+			Button:
+				text: "Load Game"
+				## this needs additional functionality
+				on_release:
+					root.dismiss()
+					if loader.selection != []: root.caller.addNewStory(loader.selection[0])
+
+<LoadStoryChooser@FileChooserListView>:
+	path: "./"
+	dirselect: True
+
+#:import Story story.Story
+<StoryListViewButton>:
+	on_release:
+		app.root.currentStory = Story(self.folder)
+		app.root.current = "game"

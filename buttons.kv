@@ -1,0 +1,12 @@
+<ChangeScreenButton@Button>:
+	on_release:
+		## trying to be smart about saving the last screen only when necessary; seems to work
+		if app.root.current == "menu": app.root.lastScreen = ["menu"]
+		if app.root.current != app.root.lastScreen[-1]: app.root.lastScreen.append(app.root.current)
+
+		## for dubugging purposes
+		print(app.root.lastScreen)
+
+<BackButton@ChangeScreenButton>:
+	text: "Back"
+	on_release: app.root.lastScreen.pop()

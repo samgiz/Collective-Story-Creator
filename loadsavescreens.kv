@@ -1,0 +1,23 @@
+<LoadSaveScreen>:
+	savedStories: slots
+	BoxLayout:
+		BackButton
+		Label:
+			text: root.labelText
+		GridLayout:
+			cols: 2
+			rows: 3
+			id: slots
+
+<LoadScreen>:
+	name: "load"
+	labelText: "Choose a slot to load from"
+
+<SaveScreen>:
+	name: "save"
+	labelText: "Choose a slot to save to"
+
+<SavedStoryButton@ChangeScreenButton>:
+	on_release: self.loadOrSave()
+	text: self.memento.title + "\n" + self.memento.timeStamp if self.memento else "(Empty Slot)"
+
