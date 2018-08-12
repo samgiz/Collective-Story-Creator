@@ -3,6 +3,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import ObjectProperty, ListProperty
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager
+from kivy.utils import get_color_from_hex
 import os.path
 import pickle
 from story import *
@@ -60,6 +61,7 @@ class ViewerApp(App):
 
 if __name__ == "__main__":
 	# set window to full screen and full resolution
+	Window.clearcolor = get_color_from_hex("BF9930")
 	if fullscreen:
 		import tkinter
 		root = tkinter.Tk()
@@ -67,6 +69,7 @@ if __name__ == "__main__":
 		width, height = root.winfo_screenwidth(), root.winfo_screenheight()
 		Window.fullscreen = fullscreen
 		Window.size = (width, height)
+		
 
 	# run application
 	ViewerApp().run()

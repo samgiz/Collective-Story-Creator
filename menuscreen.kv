@@ -1,18 +1,22 @@
+#:import tocolor kivy.utils.get_color_from_hex
+
 <MenuScreen@Screen>:
 	name: "menu"
 	BoxLayout:
 		orientation: "vertical"
-		ChangeScreenButton:
+		padding: 10
+		spacing: 10
+		MenuButton:
 			text: "Continue"
 			disabled: root.manager.currentStory == None
 			on_release: app.root.current = "game"
-		ChangeScreenButton:
+		MenuButton:
 			text: "New Game"
 			on_release: app.root.current = "new"
-		ChangeScreenButton:
+		MenuButton:
 			text: "Load"
 			on_release: app.root.current = "load"
-		ChangeScreenButton:
+		MenuButton:
 			text: "Save"
 			disabled: root.manager.currentStory == None
 			on_release: app.root.current = "save"
@@ -20,6 +24,8 @@
 		# Button:
 		# 	text: "Options"
 		# 	on_release: app.root.current = "options"
-		Button:
+		MenuButton:
 			text: "Quit"
 			on_release: app.stop()
+
+<MenuButton@ChangeScreenButton>:
