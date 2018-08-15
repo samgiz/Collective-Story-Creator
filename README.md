@@ -1,5 +1,10 @@
-The idea of this application is to have an intuitive story-based game editor and viewer that would allow people to create stories without any programming knowledge. I hope that it inspires people to create some great stories and maybe even collaborate through github to make some massive stories, with extremely different plots.
+# Project overview
 
-Currently I have only made a super basic viewer of games with a rather simplistic file structure. Since there currently is no editor, the only way one can write stories is by hand, following the pattern in the ExampleStory.
+The idea of this project is to have an intuitive and highly customizable way to create Choose Your Own Adventure games collectively. It will consist of 2 parts: the game viewer and the editor.
 
-Once the story viewer is reasonably finished, I will start developing the editor.
+## Viewer
+The viewer part of the project is currently fully functional, although not very pretty, but I'm mostly interested in the functionality, not aesthetics. It also includes the most boring example story you could ever imagine just to illustrate how it works. I would be glad if someone artistic could improve either of them. :)
+
+## Editor
+
+The editor part has not been started yet but that's what I'll be working on next. I would like to preferably have a way to share the created stories through github or some similar platform, so as to make collaborative story creation possible.

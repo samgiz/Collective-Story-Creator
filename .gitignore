@@ -1,2 +1,2 @@
 /.storystateinfo
-/__pycache__
+*.pyc

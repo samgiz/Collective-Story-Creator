@@ -42,9 +42,8 @@ class RootWidget(ScreenManager):
 			self.currentStory = Story(tmp.folder, tmp.stateId) if tmp else None
 
 
-
 # application class
-class ViewerApp(App):
+class MainApp(App):
 	def build(self):
 		pass
 	def on_stop(self):
@@ -72,7 +71,7 @@ if __name__ == "__main__":
 		
 
 	# run application
-	ViewerApp().run()
+	MainApp().run()
 
 
 # Ideas
